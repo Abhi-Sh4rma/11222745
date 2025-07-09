@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify, redirect
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import string
 import random
 import re
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # In-memory database
 url_store = {}  # shortcode: {url, expiry, clicks, creation_time, click_details}
@@ -13,7 +15,7 @@ url_store = {}  # shortcode: {url, expiry, clicks, creation_time, click_details}
 @app.before_request
 def log_request():
     with open('request_logs.txt', 'a') as f:
-        f.write(f"[{datetime.utcnow().isoformat()}] {request.method} {request.path} - {request.get_data(as_text=True)}\n")
+        f.write(f"[{datetime.now(timezone.utc).isoformat()}] {request.method} {request.path} - {request.get_data(as_text=True)}\n")
 
 # Utility functions
 def generate_shortcode(length=6):
@@ -59,11 +61,11 @@ def create_short_url():
     else:
         shortcode = generate_shortcode()
 
-    expiry = datetime.utcnow() + timedelta(minutes=validity)
+    expiry = datetime.now(timezone.utc) + timedelta(minutes=validity)
     url_store[shortcode] = {
         'url': url,
         'expiry': expiry,
-        'creation_time': datetime.utcnow(),
+        'creation_time': datetime.now(timezone.utc),
         'clicks': 0,
         'click_details': []
     }
